@@ -199,6 +199,23 @@ func (e *Executor) RunTask(ctx context.Context, call ast.Call) error {
 			return err
 		}
 
+		err = t.Env.Range(func(k string, v ast.Var) error {
+			// If the variable is not dynamic, we can set it and return
+			if v.Value != nil || v.Sh == "" {
+				t.Env.Set(k, ast.Var{Value: v.Value})
+				return nil
+			}
+			static, err := e.Compiler.HandleDynamicVar(v, t.Dir)
+			if err != nil {
+				return err
+			}
+			t.Env.Set(k, ast.Var{Value: static})
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
 		skipFingerprinting := e.ForceAll || (!call.Indirect && e.Force)
 		if !skipFingerprinting {
 			if err := ctx.Err(); err != nil {

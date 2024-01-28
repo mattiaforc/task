@@ -107,24 +107,6 @@ func (e *Executor) compiledTask(call ast.Call, evaluateShVars bool) (*ast.Task, 
 	new.Env.Merge(r.ReplaceVars(e.Taskfile.Env))
 	new.Env.Merge(r.ReplaceVars(dotenvEnvs))
 	new.Env.Merge(r.ReplaceVars(origTask.Env))
-	if evaluateShVars {
-		err = new.Env.Range(func(k string, v ast.Var) error {
-			// If the variable is not dynamic, we can set it and return
-			if v.Value != nil || v.Sh == "" {
-				new.Env.Set(k, ast.Var{Value: v.Value})
-				return nil
-			}
-			static, err := e.Compiler.HandleDynamicVar(v, new.Dir)
-			if err != nil {
-				return err
-			}
-			new.Env.Set(k, ast.Var{Value: static})
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	if len(origTask.Cmds) > 0 {
 		new.Cmds = make([]*ast.Cmd, 0, len(origTask.Cmds))
